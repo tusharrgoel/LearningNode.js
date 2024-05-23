@@ -1,13 +1,15 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path")
-const adminRoutes = require("./routes/admin")
+const adminData = require("./routes/admin")
 const shopRoutes = require("./routes/shop")
 const app = express();
 
+app.set("view engine", 'ejs');
+app.set('views','views')
 app.use(bodyParser.urlencoded({extended:false}))
 app.use(shopRoutes);
-app.use("/admin", adminRoutes);
+app.use("/admin", adminData.routes);
 app.use(express.static(path.join(__dirname, "public")))
 
 
@@ -16,6 +18,6 @@ app.listen(PORT,(req,res)=>{
     console.log(`Server is running at PORT ${PORT}`);
 });
 
-app.get((req,res)=>{
-    res.status(404).send(`<h1>Page not found</h1>`)
+app.use((req,res)=>{
+    res.status(404).render('404',{pageTitle: "Page Not Found",path:"/404"})
 })
