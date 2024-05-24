@@ -4,6 +4,7 @@ const path = require("path")
 const adminData = require("./routes/admin")
 const shopRoutes = require("./routes/shop")
 const app = express();
+const errorController = require("./controllers/error")
 
 app.set("view engine", 'ejs');
 app.set('views','views')
@@ -18,6 +19,4 @@ app.listen(PORT,(req,res)=>{
     console.log(`Server is running at PORT ${PORT}`);
 });
 
-app.use((req,res)=>{
-    res.status(404).render('404',{pageTitle: "Page Not Found",path:"/404"})
-})
+app.use(errorController.pageNotFound)
