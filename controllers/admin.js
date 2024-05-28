@@ -41,15 +41,15 @@ exports.getProducts = (req, res) => {
       console.log(err);
     });
 };
-exports.getEditProduct = (req, res) => {
+exports.getEditProduct =  async(req, res) => {
   const editMode = req.query.edit; //returns a string
   if (!editMode) {
     return res.redirect("/");
   }
   const prodId = req.params.productId;
-  req.user.getProducts({ where: { id: prodId } });
-  Product.findByPk(prodId)
-    .then((products) => {
+  const products = await req.user.getProducts({ where: { id: prodId } })
+  //Product.findByPk(prodId)
+    //.then(products => {
       const product = products[0];
       if (!product) {
         return res.redirect("/");
@@ -60,45 +60,31 @@ exports.getEditProduct = (req, res) => {
         editing: editMode,
         product,
       });
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+   // })
+    //.catch((err) => {
+      //console.log(err);
+    //});
 };
-exports.postEditProduct = (req, res) => {
+exports.postEditProduct = async (req, res) => {
   const prodId = req.body.productId;
   const updatedTitle = req.body.title;
   const updatedImageUrl = req.body.imageUrl;
   const updatedPrice = req.body.price;
   const updatedDescription = req.body.description;
 
-  Product.findByPk(prodId)
-    .then(async (product) => {
+ const product = await Product.findByPk(prodId)
+    //.then( (product) => {
       product.title = updatedTitle;
       product.description = updatedDescription;
       product.price = updatedPrice;
       product.imageUrl = updatedImageUrl;
-      return await product.save();
-    })
-    .then(() => {
-      console.log("Updated product");
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+      await product.save();
+
   res.redirect("/admin/products");
 };
-exports.postDeleteProduct = (req, res) => {
+exports.postDeleteProduct = async (req, res) => {
   const prodId = req.body.productId;
-  Product.findByPk(prodId)
-    .then(async (product) => {
-      return await product.destroy();
-    })
-    .then((result) => {
-      console.log("Deleted Product");
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-    res.redirect("/admin/products");
+  const product = await Product.findByPk(prodId)
+  await product.destroy();
+  res.redirect("/admin/products");
 };

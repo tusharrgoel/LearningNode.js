@@ -8,13 +8,19 @@ const errorController = require("./controllers/error");
 const sequelize = require("./util/database");
 const Product = require("./models/product");
 const User = require("./models/user");
+const Cart = require("./models/cart");
+const CartItem = require("./models/cart-item");
+const Order = require("./models/order");
+const OrderItem = require("./models/order-item");
+
+
 
 app.set("view engine", "ejs");
 app.set("views", "views");
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
-app.use((req, res,next) => {
+app.use((req, res, next) => {
   User.findByPk(1)
     .then((user) => {
       req.user = user;
@@ -35,6 +41,17 @@ Product.belongsTo(User, {
 });
 User.hasMany(Product);
 
+User.hasOne(Cart);
+Cart.belongsTo(User);
+
+Cart.belongsToMany(Product, { through: CartItem });
+Product.belongsToMany(Cart, { through: CartItem });
+
+Order.belongsTo(User);
+User.hasMany(Order);
+Order.belongsToMany(Product,{ through: OrderItem });
+
+
 sequelize
   .sync()
   .then((result) => {
@@ -48,13 +65,16 @@ sequelize
     return user;
   })
   .then((user) => {
-   // console.log(user);
+    return user.createCart();
+    // console.log(user);
+  })
+  .then((cart) => {
     app.listen(PORT, (req, res) => {
       console.log(`Server is running at PORT ${PORT}`);
     });
   })
   .catch((err) => {
-    //console.log(err);
+    console.log(err);
   });
 
 app.use(errorController.pageNotFound);
