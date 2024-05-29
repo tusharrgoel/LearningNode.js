@@ -1,4 +1,6 @@
 const Product = require("../models/product");
+const Order = require("../models/order");
+
 exports.getProducts = async (req, res) => {
   const products = await Product.find();
 
@@ -26,26 +28,14 @@ exports.getIndex = async (req, res) => {
   });
 };
 exports.getCart = async (req, res) => {
-  const cartProducts = await req.user.populate('cart.items.productId');
-  const products = (cartProducts.cart.items);
- // const cartProducts = await cart.getProducts();
+  const cartProducts = await req.user.populate("cart.items.productId");
+  const products = cartProducts.cart.items;
+  // const cartProducts = await cart.getProducts();
   res.render("shop/cart", {
     path: "/cart",
     pageTitle: "Your Cart",
     products: products,
   });
-
-  // Cart.getCart((cart) => {
-  //   Product.fetchAll((products) => {
-  //     const cartProducts = [];
-  //     for (p of products) {
-  //       const cartProductData = cart.products.find((prod) => prod.id === p.id);
-  //       if (cartProductData) {
-  //         cartProducts.push({ productData: p, qty: cartProductData.qty });
-  //       }
-  //     }
-  //   });
-  // });
 };
 exports.postCart = async (req, res) => {
   const prodId = req.body.productId;
@@ -59,25 +49,27 @@ exports.postDeleteCartItem = async (req, res) => {
   res.redirect("/cart");
 };
 exports.getOrders = async (req, res) => {
-  const order = await req.user.getOrders({ include: ["products"] });
-
+  const orders = await Order.find({ "user.userId": req.user._id });
   res.render("shop/orders", {
     path: "/orders",
     pageTitle: "Your orders",
-    orders: order,
+    orders: orders,
   });
 };
 exports.postOrders = async (req, res) => {
-  const cart = await req.user.getCart();
-  const cartProducts = await cart.getProducts();
-  const order = await req.user.createOrder();
-  await order.addProducts(
-    cartProducts.map((cp) => {
-      cp.orderItem = { quantity: cp.cartItem.quantity };
-      return cp;
-    })
-  );
-  await cart.setProducts(null);
+  const cartProducts = await req.user.populate("cart.items.productId");
+  const products = cartProducts.cart.items.map((i) => {
+    return { quantity: i.quantity, product: { ...i.productId._doc } };
+  });
+  const order = new Order({
+    user: {
+      name: req.user.name,
+      userId: req.user._id,
+    },
+    products: products,
+  });
+  await order.save();
+  await req.user.clearCart();
   res.redirect("/orders");
 };
 exports.getCheckout = (req, res) => {
