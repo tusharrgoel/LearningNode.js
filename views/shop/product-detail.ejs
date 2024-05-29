@@ -13,9 +13,11 @@
             </div>
             <h2>$<%= product.price %></h2>
             <p><%= product.description %> </p>
+            <% if(isAuthenticated) {%>
             <form action = "/cart" method = 'post'>
                 <button type = 'submit' class='btn'>Add to Cart</button>
                 <input type = "hidden" name = "productId" value = "<%= product.id %>" >
+                <% }%>
             </form>
         </main>
     </body>
