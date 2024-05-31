@@ -1,12 +1,11 @@
 const Product = require("../models/product");
-
+const User = require("../models/user");
 exports.getAddProduct = (req, res) => {
   res.render("admin/edit-product", {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
-    isAuthenticated : req.session.isLoggedIn
-
+    isAuthenticated: req.session.isLoggedIn,
   });
 };
 exports.postAddProduct = async (req, res) => {
@@ -26,7 +25,7 @@ exports.postAddProduct = async (req, res) => {
   res.redirect("/admin/products");
 };
 exports.getProducts = async (req, res) => {
-  const products = await Product.find();
+  const products = await Product.find({ userId: req.user._id });
   res.render("admin/products", {
     pageTitle: "Admin Products",
     prods: products,
@@ -41,12 +40,16 @@ exports.getEditProduct = async (req, res) => {
   }
   const prodId = req.params.productId;
   const product = await Product.findById(prodId);
+  if (product.userId.toString() !== req.user._id.toString()) {
+    console.log("Unable to edit");
+    return res.redirect("/");
+  }
   res.render("admin/edit-product", {
     pageTitle: "Edit Product",
     path: "/admin/edit-product",
     editing: editMode,
     product,
-    isAuthenticated : req.session.isLoggedIn
+    isAuthenticated: req.session.isLoggedIn,
   });
 };
 exports.postEditProduct = async (req, res) => {
@@ -67,7 +70,7 @@ exports.postEditProduct = async (req, res) => {
 };
 exports.postDeleteProduct = async (req, res) => {
   const prodId = req.body.productId;
-  await Product.findByIdAndDelete(prodId);
+  await Product.deleteOne({ _id: prodId, userId: req.user._id });
   console.log("Deleted the product with id", prodId, "successfully");
   res.redirect("/admin/products");
 };

@@ -30,7 +30,6 @@ exports.getIndex = async (req, res) => {
     prods: products,
     path: "/index",
     isAuthenticated : req.session.isLoggedIn
-
   });
 };
 exports.getCart = async (req, res) => {
@@ -45,12 +44,25 @@ exports.getCart = async (req, res) => {
 
   });
 };
-exports.postCart = async (req, res) => {
-  const prodId = req.body.productId;
-  const product = await Product.findById(prodId);
-  await req.user.addToCart(product);
-  res.redirect("/cart");
-};
+ exports.postCart = async (req, res) => {
+   const prodId = req.body.productId;
+   const product = await Product.findById(prodId);
+   console.log(req.user);
+   await req.user.addToCart(product);
+   res.redirect("/cart");
+ };
+  
+// exports.postCart = (req, res, next) => {
+//   const prodId = req.body.productId;
+//   Product.findById(prodId)
+//     .then(product => {
+//       return req.user.addToCart(product);
+//     })
+//     .then(result => {
+//       console.log(result);
+//       res.redirect('/cart');
+//     });
+// };
 exports.postDeleteCartItem = async (req, res) => {
   const prodId = req.body.productId;
   await req.user.removeFromCart(prodId);
@@ -72,7 +84,7 @@ exports.postOrders = async (req, res) => {
   });
   const order = new Order({
     user: {
-      name: req.user.name,
+      email:req.user.email,
       userId: req.user._id,
     },
     products: products,

@@ -9,12 +9,10 @@ const app = express();
 const session = require("express-session");
 const MongoDbStore = require("connect-mongodb-session")(session);
 const errorController = require("./controllers/error");
-//const Product = require("./models/product");
 const User = require("./models/user");
-//const Cart = require("./models/cart");
-//const CartItem = require("./models/cart-item");
-//const Order = require("./models/order");
-//const OrderItem = require("./models/order-item");
+const csrf = require("csurf");
+const flash = require("connect-flash");
+
 const MONGODB_URI =
   "mongodb+srv://tushargoel:IWHxXRJ1IX48wFrQ@cluster0.ziucdkc.mongodb.net/shop?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -22,6 +20,7 @@ const store = new MongoDbStore({
   uri: MONGODB_URI,
   collection: "sessions",
 });
+const csrfProtection = csrf();
 app.set("view engine", "ejs");
 app.set("views", "views");
 
@@ -35,19 +34,23 @@ app.use(
     store: store,
   })
 );
-
+app.use(csrfProtection);
+app.use(flash())
 app.use((req, res, next) => {
-  if(!req.session.user){
+  if (!req.session.user) {
     return next();
   }
   User.findById(req.session.user._id)
-    .then((user) => {
+    .then(user => {
       req.user = user;
       next();
     })
-    .catch((err) => {
-      console.log("failed to fetch user", err);
-    });
+    .catch(err => console.log(err));
+});
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
 });
 app.use(authRoutes);
 app.use(shopRoutes);
@@ -56,20 +59,8 @@ app.use("/admin", adminData.routes);
 const PORT = 3000;
 mongoose
   .connect(MONGODB_URI)
-  .then(async (result) => {
+  .then((result) => {
     console.log("Connected to MongoDB");
-    const userExists = await User.findOne();
-    if (!userExists) {
-      const user = new User({
-        name: "Tushar",
-        email: "tusharrgoel@gmail.com",
-        cart: {
-          items: [],
-        },
-      });
-      user.save();
-    }
-
     app.listen(PORT, (req, res) => {
       console.log(`Server is running at PORT ${PORT}`);
     });
