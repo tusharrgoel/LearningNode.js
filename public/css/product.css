@@ -25,3 +25,6 @@
 .product__description {
     text-align: center;
 }
+.form-control input.invalid{
+    border-color:red;
+  }

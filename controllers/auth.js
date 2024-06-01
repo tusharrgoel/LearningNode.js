@@ -3,6 +3,9 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const sgt = require("nodemailer-sendgrid-transport");
 const nodeMailer = require("nodemailer");
+const { validationResult } = require("express-validator");
+const { ReturnDocument } = require("mongodb");
+const { error } = require("console");
 const transporter = nodeMailer.createTransport(
   sgt({
     auth: {
@@ -23,28 +26,43 @@ exports.getLogin = (req, res) => {
     pageTitle: "Login",
     isAuthenticated: false,
     errorMessage: message,
+    oldData: { email: "", password: "" },
+    validationErrors: [],
   });
 };
 exports.postLogin = async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const errors = validationResult(req);
+  console.log(email);
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/login", {
+      path: "/login",
+      pageTitle: "Login",
+      isAuthenticated: false,
+      errorMessage: errors.array()[0].msg,
+      oldData: { email: email, password: password },
+      validationErrors: errors.array(),
+    });
+  }
   const userExists = await User.findOne({ email: email });
-  if (!userExists) {
-    req.flash("error", "Invalid Email or Password");
-    res.redirect("/login");
+  const passwordMatched = await bcrypt.compare(password, userExists.password);
+  if (passwordMatched) {
+    req.session.isLoggedIn = true;
+    req.session.user = userExists;
+    req.session.save((err) => {
+      console.log("User logged in successfully");
+      res.redirect("/");
+    });
   } else {
-    const passwordMatched = await bcrypt.compare(password, userExists.password);
-    if (passwordMatched) {
-      req.session.isLoggedIn = true;
-      req.session.user = userExists;
-      req.session.save((err) => {
-        console.log("User logged in successfully");
-        res.redirect("/");
-      });
-    } else {
-      req.flash("error", "Invalid Email or Password");
-      res.redirect("/login");
-    }
+    return res.status(422).render("auth/login", {
+      path: "/login",
+      pageTitle: "Login",
+      isAuthenticated: false,
+      errorMessage: "Invalid Email or Password",
+      oldData: { email: email, password: password },
+      validationErrors: [],
+    });
   }
 };
 exports.postLogout = (req, res) => {
@@ -53,16 +71,39 @@ exports.postLogout = (req, res) => {
     res.redirect("/");
   });
 };
+exports.getSignUp = (req, res) => {
+  let message = req.flash("error");
+  if (message.length > 0) {
+    message = message[0];
+  } else {
+    message = null;
+  }
+  res.render("auth/signup", {
+    path: "/signup",
+    pageTitle: "SignUp",
+    isAuthenticated: false,
+    errorMessage: message,
+    oldData: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validationErrors: [],
+  });
+};
 exports.postSignUp = async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const confirmPassword = req.body.confirmPassword;
-
-  const user = await User.findOne({ email: email });
-
-  if (user) {
-    req.flash("error", "Email id already exists, please login");
-    return res.redirect("/signup");
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/signup", {
+      path: "/signup",
+      pageTitle: "SignUp",
+      isAuthenticated: false,
+      errorMessage: errors.array()[0].msg,
+      oldData: { email: email },
+      validationErrors: errors.array(),
+    });
   }
   const hashedPassword = await bcrypt.hash(password, 12);
   const newUser = new User({
@@ -83,20 +124,6 @@ exports.postSignUp = async (req, res) => {
     .catch((err) => {
       console.log(err);
     });
-};
-exports.getSignUp = (req, res) => {
-  let message = req.flash("error");
-  if (message.length > 0) {
-    message = message[0];
-  } else {
-    message = null;
-  }
-  res.render("auth/signup", {
-    path: "/signup",
-    pageTitle: "SignUp",
-    isAuthenticated: false,
-    errorMessage: message,
-  });
 };
 exports.getReset = (req, res) => {
   let message = req.flash("error");
