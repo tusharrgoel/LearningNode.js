@@ -35,17 +35,22 @@ app.use(
   })
 );
 app.use(csrfProtection);
-app.use(flash())
+app.use(flash());
 app.use((req, res, next) => {
   if (!req.session.user) {
     return next();
   }
   User.findById(req.session.user._id)
-    .then(user => {
+    .then((user) => {
+      if (!user) {
+        return next();
+      }
       req.user = user;
       next();
     })
-    .catch(err => console.log(err));
+    .catch((err) => {
+      throw new Error(err);
+    });
 });
 app.use((req, res, next) => {
   res.locals.isAuthenticated = req.session.isLoggedIn;
@@ -55,6 +60,13 @@ app.use((req, res, next) => {
 app.use(authRoutes);
 app.use(shopRoutes);
 app.use("/admin", adminData.routes);
+
+app.use(errorController.getError);
+app.use(errorController.pageNotFound);
+
+app.use((error,req,res,next)=>{
+  res.redirect("/500");
+})
 
 const PORT = 3000;
 mongoose
@@ -68,4 +80,3 @@ mongoose
   .catch((err) => {
     console.log("Failed to connect ", err);
   });
-app.use(errorController.pageNotFound);

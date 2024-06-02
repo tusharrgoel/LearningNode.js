@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require('bcryptjs')
 const authController = require("../controllers/auth");
 const { check, body } = require("express-validator");
 const User = require("../models/user");
@@ -12,7 +13,7 @@ router.post(
     .custom(async (value, { req }) => {
       const userExists = await User.findOne({ email: value });
       if (!userExists) {
-        throw new Error("Invalid Email or Password");
+        throw new Error("Invalid Email");
       }
       return true;
     })
@@ -49,12 +50,14 @@ router.post(
     .isLength({ min: 5 })
     .isAlphanumeric()
     .trim(),
-  body("confirmPassword").trim().custom((value, { req }) => {
-    if (value !== req.body.password) {
-      throw new Error("Both Passwords should match");
-    }
-    return true;
-  }),
+  body("confirmPassword")
+    .trim()
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error("Both Passwords should match");
+      }
+      return true;
+    }),
   authController.postSignUp
 );
 router.get("/resetpassword", authController.getReset);
