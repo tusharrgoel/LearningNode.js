@@ -1,6 +1,7 @@
 const Product = require("../models/product");
 const User = require("../models/user");
 const { validationResult } = require("express-validator");
+const fileHelper = require("../util/file");
 exports.getProducts = async (req, res) => {
   const products = await Product.find({ userId: req.user._id });
   try {
@@ -35,19 +36,36 @@ exports.getAddProduct = (req, res) => {
 };
 exports.postAddProduct = async (req, res, next) => {
   const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
+  const image = req.file;
   const price = req.body.price;
   const description = req.body.description;
+  if (!image) {
+    return res.status(422).render("admin/edit-product", {
+      path: "/admin/add-product",
+      pageTitle: "Add Product",
+      editing: false,
+      hasError: true,
+      product: {
+        title: title,
+        price: price,
+        description: description,
+      },
+      errorMessage:
+        "Attached file is not supported. Please upload in form of .png, .jpg or .jpeg",
+      validationErrors: [],
+    });
+  }
   const errors = validationResult(req);
   try {
     if (!errors.isEmpty() > 0) {
+      console.log(errors.array())
       return res.status(422).render("admin/edit-product", {
         pageTitle: "Add Product",
         path: "/admin/edit-product",
         editing: false,
         product: {
           title: title,
-          imageUrl: imageUrl,
+          image: image,
           price: price,
           description: description,
         },
@@ -57,6 +75,7 @@ exports.postAddProduct = async (req, res, next) => {
         validationErrors: errors.array(),
       });
     }
+    const imageUrl = image.path;
     const product = new Product({
       title: title,
       imageUrl: imageUrl,
@@ -105,7 +124,7 @@ exports.postEditProduct = async (req, res, next) => {
   try {
     const prodId = req.body.productId;
     const updatedTitle = req.body.title;
-    const updatedImageUrl = req.body.imageUrl;
+    const updatedImage = req.file;
     const updatedPrice = req.body.price;
     const updatedDescription = req.body.description;
     const errors = validationResult(req);
@@ -117,7 +136,6 @@ exports.postEditProduct = async (req, res, next) => {
         product: {
           _id: prodId,
           title: updatedTitle,
-          imageUrl: updatedImageUrl,
           price: updatedPrice,
           description: updatedDescription,
         },
@@ -131,19 +149,28 @@ exports.postEditProduct = async (req, res, next) => {
     product.title = updatedTitle;
     product.description = updatedDescription;
     product.price = updatedPrice;
-    product.imageUrl = updatedImageUrl;
+    if (updatedImage) {
+      fileHelper.deleteFile(product.imageUrl);
+      product.imageUrl = updatedImage.path;
+    }
     await product.save();
     console.log("Edited the product with id", prodId, "successfully");
     res.redirect("/admin/products");
   } catch (err) {
+    console.log(err);
     const error = new Error(err);
     error.httpStatusCode = 500;
     return next(500);
   }
 };
 exports.postDeleteProduct = async (req, res) => {
-  const prodId = req.body.productId;
   try {
+    const prodId = req.body.productId;
+    const product = await Product.findById(prodId);
+    if(!product){
+      return next(new Error("Product not found"))
+    }
+    fileHelper.deleteFile(product.imageUrl);
     await Product.deleteOne({ _id: prodId, userId: req.user._id });
     console.log("Deleted the product with id", prodId, "successfully");
     res.redirect("/admin/products");

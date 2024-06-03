@@ -12,7 +12,7 @@ const errorController = require("./controllers/error");
 const User = require("./models/user");
 const csrf = require("csurf");
 const flash = require("connect-flash");
-
+const multer = require("multer");
 const MONGODB_URI =
   "mongodb+srv://tushargoel:IWHxXRJ1IX48wFrQ@cluster0.ziucdkc.mongodb.net/shop?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -24,8 +24,21 @@ const csrfProtection = csrf();
 app.set("view engine", "ejs");
 app.set("views", "views");
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "images");
+  },
+  filename: (req, file, cb) => {
+    const date = new Date().toISOString().replace(/:/g, '-');
+    cb(null, date + "-" + file.originalname);
+  },
+});
+
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(multer({ storage:fileStorage }).single("image"));
 app.use(express.static(path.join(__dirname, "public")));
+app.use('/images',express.static(path.join(__dirname, "images")));
+
 app.use(
   session({
     secret: "my secret",
@@ -64,9 +77,9 @@ app.use("/admin", adminData.routes);
 app.use(errorController.getError);
 app.use(errorController.pageNotFound);
 
-app.use((error,req,res,next)=>{
+app.use((error, req, res, next) => {
   res.redirect("/500");
-})
+});
 
 const PORT = 3000;
 mongoose

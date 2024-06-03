@@ -4,7 +4,6 @@ const crypto = require("crypto");
 const sgt = require("nodemailer-sendgrid-transport");
 const nodeMailer = require("nodemailer");
 const { validationResult } = require("express-validator");
-const { ReturnDocument } = require("mongodb");
 const { error } = require("console");
 const transporter = nodeMailer.createTransport(
   sgt({

@@ -8,20 +8,24 @@ router.get("/products", isAuth, adminController.getProducts);
 router.get("/add-product", isAuth, adminController.getAddProduct);
 router.post(
   "/add-product",
-  check("title").isString().isLength({ min: 3 }).withMessage('Invalid Title'),
-  check("imageUrl").isURL().withMessage('Invalid Image Url'),
-  check("price").isFloat().withMessage('Invalid Price'),
-  check("title").isLength({ min: 8, max: 400 }).withMessage('Invalid Description'),
+  check("title").isLength({ min: 3 }).withMessage("Invalid Title"),
+  //check("imageUrl").withMessage("Invalid Image Url"),
+  check("price").isFloat().withMessage("Invalid Price"),
+  check("title")
+    .isLength({ min: 8, max: 400 })
+    .withMessage("Invalid Description"),
   isAuth,
   adminController.postAddProduct
 );
 router.get("/edit-product/:productId", isAuth, adminController.getEditProduct);
 router.post(
   "/edit-product",
-  check("title").isString().isLength({ min: 3 }).withMessage('Invalid Title'),
-  check("imageUrl").isURL().withMessage('Invalid Image Url'),
-  check("price").isFloat().withMessage('Invalid Price'),
-  check("description").isLength({ min: 8, max: 400 }).withMessage('Invalid Description'),
+  check("title").isString().isLength({ min: 3 }).withMessage("Invalid Title"),
+  //check("imageUrl").withMessage("Invalid Image Url"),
+  check("price").isFloat().withMessage("Invalid Price"),
+  check("description")
+    .isLength({ min: 8, max: 400 })
+    .withMessage("Invalid Description"),
   isAuth,
   adminController.postEditProduct
 );
