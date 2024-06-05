@@ -4,15 +4,35 @@ const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 
-exports.getProducts = async (req, res) => {
-  const products = await Product.find();
+const productsPerPage = 2;
 
-  res.render("shop/product-list", {
-    pageTitle: "All Products",
-    prods: products,
-    path: "/products",
-    isAuthenticated: req.session.isLoggedIn,
-  });
+exports.getProducts = async (req, res) => {
+  try {
+    const page = +req.query.page || 1;
+    const numberOfProds = await Product.find().countDocuments();
+    const products = await Product.find()
+      .skip((page - 1) * productsPerPage)
+      .limit(productsPerPage);
+
+    res.render("shop/index", {
+      pageTitle: "All Products",
+      prods: products,
+      path: "/products",
+      totalItems: numberOfProds,
+      currentPage: page,
+      hasPrevPage: page > 1,
+      hasNextPage: productsPerPage * page < numberOfProds,
+      nextPage: page + 1,
+      prevPage: page - 1,
+      lastPage: Math.ceil(numberOfProds / productsPerPage),
+      isAuthenticated: req.session.isLoggedIn,
+    });
+  } catch (err) {
+    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(500);
+  }
 };
 exports.getProductDetail = async (req, res) => {
   const prodId = req.params.productId;
@@ -25,13 +45,32 @@ exports.getProductDetail = async (req, res) => {
   });
 };
 exports.getIndex = async (req, res) => {
-  const products = await Product.find();
-  res.render("shop/index", {
-    pageTitle: "shop",
-    prods: products,
-    path: "/index",
-    isAuthenticated: req.session.isLoggedIn,
-  });
+  try {
+    const page = +req.query.page || 1;
+    const numberOfProds = await Product.find().countDocuments();
+    const products = await Product.find()
+      .skip((page - 1) * productsPerPage)
+      .limit(productsPerPage);
+
+    res.render("shop/index", {
+      pageTitle: "Shop",
+      prods: products,
+      totalItems: numberOfProds,
+      currentPage: page,
+      hasPrevPage: page > 1,
+      hasNextPage: productsPerPage * page < numberOfProds,
+      path: "/",
+      nextPage: page + 1,
+      prevPage: page - 1,
+      lastPage: Math.ceil(numberOfProds / productsPerPage),
+      isAuthenticated: req.session.isLoggedIn,
+    });
+  } catch (err) {
+    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(500);
+  }
 };
 exports.getCart = async (req, res, next) => {
   try {

@@ -2,20 +2,47 @@ const Product = require("../models/product");
 const User = require("../models/user");
 const { validationResult } = require("express-validator");
 const fileHelper = require("../util/file");
+const productsPerPage = 2;
 exports.getProducts = async (req, res) => {
-  const products = await Product.find({ userId: req.user._id });
   try {
+    const page = +req.query.page || 1;
+    const numberOfProds = await Product.find({ userId: req.user._id }).countDocuments();
+    const products = await Product.find({ userId: req.user._id })
+      .skip((page - 1) * productsPerPage)
+      .limit(productsPerPage);
+
     res.render("admin/products", {
       pageTitle: "Admin Products",
       prods: products,
+      totalItems: numberOfProds,
+      currentPage: page,
+      hasPrevPage: page > 1,
+      hasNextPage: (productsPerPage * page) < numberOfProds,
       path: "/admin/products",
+      nextPage: page + 1,
+      prevPage: page - 1,
+      lastPage: Math.ceil(numberOfProds / productsPerPage),
       isAuthenticated: req.session.isLoggedIn,
     });
   } catch (err) {
+    console.log(err)
     const error = new Error(err);
     error.httpStatusCode = 500;
     return next(500);
   }
+  // const products = await Product.find({ userId: req.user._id });
+  // try {
+  //   res.render("admin/products", {
+  //     pageTitle: "Admin Products",
+  //     prods: products,
+  //     path: "/admin/products",
+  //     isAuthenticated: req.session.isLoggedIn,
+  //   });
+  // } catch (err) {
+  //   const error = new Error(err);
+  //   error.httpStatusCode = 500;
+  //   return next(500);
+  // }
 };
 exports.getAddProduct = (req, res) => {
   try {
@@ -163,20 +190,20 @@ exports.postEditProduct = async (req, res, next) => {
     return next(500);
   }
 };
-exports.postDeleteProduct = async (req, res) => {
+exports.deleteProduct = async (req, res,next) => {
   try {
-    const prodId = req.body.productId;
+    const prodId = req.params.productId;
     const product = await Product.findById(prodId);
     if(!product){
       return next(new Error("Product not found"))
     }
+
     fileHelper.deleteFile(product.imageUrl);
     await Product.deleteOne({ _id: prodId, userId: req.user._id });
+    
     console.log("Deleted the product with id", prodId, "successfully");
-    res.redirect("/admin/products");
+    res.status(200).json({message:"success product deletion"});
   } catch (err) {
-    const error = new Error(err);
-    error.httpStatusCode = 500;
-    return next(500);
+    res.status(500).json({message:"deletion failed"});
   }
 };

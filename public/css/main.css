@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Open+Sans:400,700');
+@import url("https://fonts.googleapis.com/css?family=Open+Sans:400,700");
 
 * {
   box-sizing: border-box;
@@ -7,7 +7,7 @@
 body {
   padding: 0;
   margin: 0;
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
 }
 
 main {
@@ -171,6 +171,7 @@ form {
 
 .card {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  height: fit-content;
 }
 
 .card__header,
@@ -236,7 +237,7 @@ form {
   .main-header__nav {
     display: flex;
   }
-  .user-message{
+  .user-message {
     width: 30rem;
   }
   #side-menu-toggle {
@@ -245,15 +246,32 @@ form {
 }
 .user-message {
   margin: auto;
-  width:50%;
-  padding:1rem;
-  border-radius:3px;
-  border:1px solid blue;
+  width: 50%;
+  padding: 1rem;
+  border-radius: 3px;
+  border: 1px solid blue;
   background: #b9c9ff;
-  text-align:center
+  text-align: center;
 }
-.user-message--error{
-  border-color:red;
-  background: rgb(255,176,176);
-  color:red
+.user-message--error {
+  border-color: red;
+  background: rgb(255, 176, 176);
+  color: red;
+}
+.pagination {
+  margin-top: 2rem;
+  text-align: center;
+}
+.pagination a {
+  text-decoration: none;
+  color: #00695c;
+  padding: 0.5rem;
+  border: 1px solid #00695c;
+  margin: 0 1rem;
+}
+.pagination a:hover,
+.pagination a:active,
+.pagination a.active {
+  background: #00695c;
+  color: whitesmoke;
 }
