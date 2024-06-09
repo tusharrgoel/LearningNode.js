@@ -36,7 +36,7 @@ const fileStorage = multer.diskStorage({
   },
 });
 
-const accessLog = fs.createWriteStream(path.join(__dirname, "access.log"), {
+const accessLog = fs.createWriteStream(path.join('/tmp', "access.log"), {
   flags: "a",
 });
 app.use(helmet());
