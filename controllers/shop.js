@@ -4,9 +4,8 @@ const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const stripe = require("stripe")(
-  "sk_test_51POcHOGXkJyvubQmPMtoBxeVASEXhCl1z54VLPeU2jjkUKUW6fSUGDuyBJfmhS8INnDvzJmed84REmPmEmmYjWw700GKP9QI9c"
+  `${process.nextTick.STRIPE_KEY}`
 );
-
 const productsPerPage = 2;
 
 exports.getProducts = async (req, res) => {
@@ -87,7 +86,6 @@ exports.getCart = async (req, res, next) => {
       isAuthenticated: req.session.isLoggedIn,
     });
   } catch (err) {
-    console.log(err);
     const error = new Error(err);
     error.httpStatusCode = 500;
     return next(500);
@@ -97,7 +95,6 @@ exports.postCart = async (req, res, next) => {
   try {
     const prodId = req.body.productId;
     const product = await Product.findById(prodId);
-    console.log(req.user);
     await req.user.addToCart(product);
     res.redirect("/cart");
   } catch (err) {

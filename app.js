@@ -13,8 +13,11 @@ const User = require("./models/user");
 const csrf = require("csurf");
 const flash = require("connect-flash");
 const multer = require("multer");
-const MONGODB_URI =
-  "mongodb+srv://tushargoel:IWHxXRJ1IX48wFrQ@cluster0.ziucdkc.mongodb.net/shop?retryWrites=true&w=majority&appName=Cluster0";
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
+const fs = require("fs");
+const MONGODB_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_USER_PASSWORD}@cluster0.ziucdkc.mongodb.net/shop?retryWrites=true&w=majority&appName=Cluster0`;
 
 const store = new MongoDbStore({
   uri: MONGODB_URI,
@@ -23,21 +26,26 @@ const store = new MongoDbStore({
 const csrfProtection = csrf();
 app.set("view engine", "ejs");
 app.set("views", "views");
-
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "images");
   },
   filename: (req, file, cb) => {
-    const date = new Date().toISOString().replace(/:/g, '-');
+    const date = new Date().toISOString().replace(/:/g, "-");
     cb(null, date + "-" + file.originalname);
   },
 });
 
+const accessLog = fs.createWriteStream(path.join(__dirname, "access.log"), {
+  flags: "a",
+});
+app.use(helmet());
+app.use(compression());
+app.use(morgan("combined",{stream:accessLog}));
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(multer({ storage:fileStorage }).single("image"));
+app.use(multer({ storage: fileStorage }).single("image"));
 app.use(express.static(path.join(__dirname, "public")));
-app.use('/images',express.static(path.join(__dirname, "images")));
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.use(
   session({
@@ -81,7 +89,7 @@ app.use((error, req, res, next) => {
   res.redirect("/500");
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 mongoose
   .connect(MONGODB_URI)
   .then((result) => {
